@@ -1,65 +1,232 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { getSupabase } from "@/lib/supabase";
+import { TeamMember, DailyAvailability } from "@/types";
+import { format, addMonths, subMonths, isToday, startOfMonth, endOfMonth, subDays, addDays, getDay } from "date-fns";
+import Header from "@/components/Header";
+import TopSupportCards from "@/components/TopSupportCards";
+import CalendarGrid from "@/components/CalendarGrid";
+import TeamMemberModal from "@/components/TeamMemberModal";
+import AssignModal from "@/components/AssignModal";
+import LoginModal from "@/components/LoginModal";
+import TeamRoster from "@/components/TeamRoster";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Home() {
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [availability, setAvailability] = useState<DailyAvailability[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+  const [showAssign, setShowAssign] = useState(false);
+
+  const { requireEditor, showLoginModal, role } = useAuth();
+
+  const fetchTeamMembers = useCallback(async () => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const { data } = await supabase
+      .from("team_members")
+      .select("*")
+      .eq("is_active", true)
+      .order("name");
+    if (data) setTeamMembers(data);
+  }, []);
+
+  const fetchMonthAvailability = useCallback(async () => {
+    setLoading(true);
+    const supabase = getSupabase();
+    if (!supabase) return;
+    
+    // Calculate calendar grid range to fetch data
+    const start = startOfMonth(currentMonth);
+    const end = endOfMonth(currentMonth);
+    
+    // Include visible days from prev/next months
+    const startDayOfWeek = getDay(start);
+    const startDate = subDays(start, startDayOfWeek);
+    const endDayOfWeek = getDay(end);
+    const endDate = addDays(end, 6 - endDayOfWeek);
+
+    const startStr = format(startDate, "yyyy-MM-dd");
+    const endStr = format(endDate, "yyyy-MM-dd");
+
+    const { data } = await supabase
+      .from("daily_availability")
+      .select("*, team_member:team_members(*)")
+      .gte("date", startStr)
+      .lte("date", endStr)
+      .eq("is_available", true);
+      
+    if (data) setAvailability(data);
+    setLoading(false);
+  }, [currentMonth]);
+
+  useEffect(() => {
+    fetchTeamMembers();
+  }, [fetchTeamMembers]);
+
+  useEffect(() => {
+    fetchMonthAvailability();
+  }, [fetchMonthAvailability]);
+
+  // Derived state for the currently selected day's availability
+  const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+  const selectedDayAvailabilities = useMemo(() => {
+    return availability.filter((a) => a.date === selectedDateStr);
+  }, [availability, selectedDateStr]);
+
+  const handlePrevMonth = () => setCurrentMonth((d) => subMonths(d, 1));
+  const handleNextMonth = () => setCurrentMonth((d) => addMonths(d, 1));
+  
+  const handleSelectDate = (date: Date) => {
+    setSelectedDate(date);
+    // If selecting a date outside current month, automatically change month
+    if (format(date, "MM") !== format(currentMonth, "MM")) {
+      setCurrentMonth(date);
+    }
+  };
+
+  const handleGoToToday = () => {
+    const today = new Date();
+    setSelectedDate(today);
+    setCurrentMonth(today);
+  };
+
+  const handleRemoveAvailability = async (id: string) => {
+    if (!requireEditor()) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    await supabase.from("daily_availability").delete().eq("id", id);
+    fetchMonthAvailability();
+  };
+
+  const handleMemberSaved = () => {
+    setShowAddMember(false);
+    setEditingMember(null);
+    fetchTeamMembers();
+  };
+
+  const handleRemoveMember = async (id: string) => {
+    if (!requireEditor()) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    await supabase.from("team_members").update({ is_active: false }).eq("id", id);
+    fetchTeamMembers();
+    fetchMonthAvailability();
+  };
+
+  const handleAssigned = () => {
+    setShowAssign(false);
+    fetchMonthAvailability();
+  };
+
+  const displayDateLabel = isToday(selectedDate)
+    ? "Today"
+    : format(selectedDate, "MMM d, yyyy");
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)]">
+      <Header />
+
+      <main className="flex-1 w-full max-w-[1200px] mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8">
+        
+        {/* Left Side: Selected Day Focus (Cards) */}
+        <div className="lg:w-[400px] shrink-0">
+          <TopSupportCards
+            availabilities={selectedDayAvailabilities}
+            dateLabel={displayDateLabel}
+            onRemove={handleRemoveAvailability}
+            onAssignClick={() => { if (requireEditor()) setShowAssign(true); }}
+            isEditor={role.isTeamMember}
+          />
+
+          <div className="hidden lg:block">
+            <TeamRoster
+              members={teamMembers}
+              isEditor={role.isTeamMember}
+              onAddMember={() => { if (requireEditor()) setShowAddMember(true); }}
+              onEditMember={(m) => { if (requireEditor()) setEditingMember(m); }}
+              onRemoveMember={handleRemoveMember}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+        </div>
+
+        {/* Right Side: Calendar View */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold">{format(currentMonth, "MMMM yyyy")}</h2>
+            
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleGoToToday}
+                className="text-sm font-semibold text-[var(--primary)] hover:text-[var(--primary-hover)] px-2 transition-colors"
+              >
+                Today
+              </button>
+              
+              <div className="flex gap-1">
+                <button
+                  onClick={handlePrevMonth}
+                  className="w-10 h-10 rounded-xl bg-slate-800 text-white hover:bg-slate-900 shadow-sm flex items-center justify-center transition-all"
+                >
+                  <FaChevronLeft size={14} />
+                </button>
+                <button
+                  onClick={handleNextMonth}
+                  className="w-10 h-10 rounded-xl bg-slate-800 text-white hover:bg-slate-900 shadow-sm flex items-center justify-center transition-all"
+                >
+                  <FaChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <CalendarGrid
+            currentDate={currentMonth}
+            selectedDate={selectedDate}
+            onSelectDate={handleSelectDate}
+            availabilities={availability}
+          />
+          
+          {/* Mobile view only: Roster below calendar */}
+          <div className="mt-8 block lg:hidden">
+            <TeamRoster
+              members={teamMembers}
+              isEditor={role.isTeamMember}
+              onAddMember={() => { if (requireEditor()) setShowAddMember(true); }}
+              onEditMember={(m) => { if (requireEditor()) setEditingMember(m); }}
+              onRemoveMember={handleRemoveMember}
+            />
+          </div>
         </div>
       </main>
+
+      {(showAddMember || editingMember) && (
+        <TeamMemberModal
+          member={editingMember || undefined}
+          onClose={() => { setShowAddMember(false); setEditingMember(null); }}
+          onSaved={handleMemberSaved}
+        />
+      )}
+
+      {showAssign && (
+        <AssignModal
+          date={selectedDateStr}
+          teamMembers={teamMembers}
+          existingAvailability={selectedDayAvailabilities}
+          onClose={() => setShowAssign(false)}
+          onAssigned={handleAssigned}
+        />
+      )}
+
+      {showLoginModal && <LoginModal />}
     </div>
   );
 }

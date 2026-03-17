@@ -1,0 +1,24 @@
+{
+  "name": "Support Team Manager",
+  "short_name": "Support App",
+  "description": "Manage daily support team availability",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#00a0e9",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo-circle.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-circle.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
