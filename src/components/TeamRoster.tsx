@@ -39,11 +39,6 @@ export default function TeamRoster({ members, isEditor = false, onAddMember, onE
               key={m.id}
               className="bg-[var(--card)] rounded-xl border border-[var(--card-border)] px-4 py-3 flex items-center gap-3 shadow-sm hover:border-[var(--primary)]/40 transition-colors"
             >
-              {/* Avatar */}
-              <div className="w-10 h-10 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 flex items-center justify-center text-sm font-bold shrink-0">
-                {m.name.charAt(0).toUpperCase()}
-              </div>
-
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-sm leading-tight truncate">

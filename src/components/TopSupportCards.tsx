@@ -61,27 +61,24 @@ export default function TopSupportCards({
           const m = item.team_member;
           const phone = m?.phone || "";
           const cleanPhone = phone.replace(/\D/g, "");
-          const hoursLabel = `${String(item.start_hour).padStart(2, '0')}:00 – ${String(item.end_hour).padStart(2, '0')}:00`;
           
           return (
             <div
               key={item.id}
               className="rounded-xl border bg-slate-100/80 dark:bg-slate-700/40 border-[var(--primary)]/30 px-4 py-4 flex items-center gap-3 group transition-colors shadow-md hover:border-[var(--primary)]/60"
             >
-              {/* Avatar */}
-              <div className="w-10 h-10 rounded-full bg-[var(--primary-bg)] text-[var(--primary)] border border-[var(--primary)]/20 flex items-center justify-center text-sm font-bold shrink-0">
-                {m?.name?.charAt(0).toUpperCase() || '?'}
-              </div>
-
-              {/* Name */}
-              <div className="truncate min-w-0 flex-1 font-bold text-sm">
-                {m?.name || "Unknown"}
+              {/* Name & Role */}
+              <div className="min-w-0 flex-1">
+                <div className="font-bold text-sm break-words">{m?.name || "Unknown"}</div>
+                <div className="text-xs text-[var(--muted)]">{m?.role}</div>
               </div>
 
               {/* Hours */}
-              <span className="whitespace-nowrap shrink-0 font-mono text-xs text-[var(--primary)] font-semibold">
-                {hoursLabel}
-              </span>
+              <div className="shrink-0 font-mono text-xs text-[var(--primary)] font-semibold text-center leading-tight">
+                <div>{String(item.start_hour).padStart(2, '0')}:00</div>
+                <div className="text-[10px] text-[var(--muted)]">to</div>
+                <div>{String(item.end_hour).padStart(2, '0')}:00</div>
+              </div>
 
               {/* Action buttons */}
               <div className="flex items-center gap-1 shrink-0">
