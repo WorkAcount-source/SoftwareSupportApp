@@ -9,7 +9,7 @@ import {
   ReactNode,
 } from "react";
 import { getSupabase } from "@/lib/supabase";
-import type { User, Session } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 
 interface UserRole {
   isAdmin: boolean;
@@ -18,14 +18,11 @@ interface UserRole {
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
   loading: boolean;
   role: UserRole;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
-  /** Returns true if the user is an editor or admin. Shows login modal if not authenticated, shows alert if no permission. */
-  requireEditor: () => boolean;
   /** Returns true if the user is an admin. */
   requireAdmin: () => boolean;
   showLoginModal: boolean;
@@ -38,7 +35,6 @@ const NO_ROLE: UserRole = { isAdmin: false, isTeamMember: false };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<UserRole>(NO_ROLE);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -63,7 +59,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
       setUser(session?.user ?? null);
       if (session?.user?.email) {
         fetchRole(session.user.email);
@@ -75,7 +70,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
       setUser(session?.user ?? null);
       if (session?.user?.email) {
         fetchRole(session.user.email);
@@ -105,6 +99,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(
     async (email: string, password: string): Promise<{ error: string | null }> => {
+      // Restrict signup to allowed email domain if configured
+      const allowedDomain = process.env.NEXT_PUBLIC_ALLOWED_EMAIL_DOMAIN;
+      if (allowedDomain && !email.toLowerCase().endsWith(`@${allowedDomain.toLowerCase()}`)) {
+        return { error: `Only @${allowedDomain} email addresses are allowed.` };
+      }
+
       const { data, error } = await getSupabase().auth.signUp({
         email,
         password,
@@ -115,7 +115,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // the user is already signed in — update state and close the modal.
       if (data.session) {
         setUser(data.session.user);
-        setSession(data.session);
         await fetchRole(data.session.user.email ?? "");
         setShowLoginModal(false);
       }
@@ -128,21 +127,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     await getSupabase().auth.signOut();
     setUser(null);
-    setSession(null);
     setRole(NO_ROLE);
   }, []);
-
-  const requireEditor = useCallback((): boolean => {
-    if (!user) {
-      setShowLoginModal(true);
-      return false;
-    }
-    if (!role.isTeamMember) {
-      alert("Your email is not in the team members list. Ask an admin to add you.");
-      return false;
-    }
-    return true;
-  }, [user, role]);
 
   const requireAdmin = useCallback((): boolean => {
     if (!user) {
@@ -160,13 +146,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        session,
         loading,
         role,
         signIn,
         signUp,
         signOut,
-        requireEditor,
         requireAdmin,
         showLoginModal,
         setShowLoginModal,

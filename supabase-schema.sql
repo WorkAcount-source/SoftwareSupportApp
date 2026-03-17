@@ -90,21 +90,21 @@ ALTER TABLE daily_availability ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read access to team_members" ON team_members
   FOR SELECT USING (true);
 
--- team_members: only team members can write (edit schedule, add members)
-CREATE POLICY "Team member write on team_members" ON team_members
+-- team_members: only admins can write (manage members)
+CREATE POLICY "Admin write on team_members" ON team_members
   FOR ALL TO authenticated
-  USING (is_team_member())
-  WITH CHECK (is_team_member());
+  USING (is_team_admin())
+  WITH CHECK (is_team_admin());
 
 -- daily_availability: anyone can read
 CREATE POLICY "Public read access to daily_availability" ON daily_availability
   FOR SELECT USING (true);
 
--- daily_availability: only team members can write
-CREATE POLICY "Team member write on daily_availability" ON daily_availability
+-- daily_availability: only admins can write
+CREATE POLICY "Admin write on daily_availability" ON daily_availability
   FOR ALL TO authenticated
-  USING (is_team_member())
-  WITH CHECK (is_team_member());
+  USING (is_team_admin())
+  WITH CHECK (is_team_admin());
 
 -- ===========================================
 -- SEED: First admin team member

@@ -40,15 +40,15 @@ export default function TopSupportCards({
   }
 
   return (
-    <div className="mb-8">
+    <div className="mb-8 rounded-2xl border-2 border-[var(--primary)] bg-slate-50 dark:bg-slate-800/80 p-4 shadow-lg">
       <div className="flex items-start sm:items-center justify-between mb-4 gap-2">
-        <h2 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent leading-tight mt-1 sm:mt-0">
+        <h2 className="text-lg sm:text-xl font-bold leading-tight mt-1 sm:mt-0 bg-gradient-to-r from-blue-500 to-sky-400 bg-clip-text text-transparent">
           On Support • {dateLabel}
         </h2>
 {isEditor && (
           <button
             onClick={onAssignClick}
-            className="bg-slate-800 hover:bg-slate-900 shadow-sm text-white rounded-lg px-3 py-1.5 sm:px-4 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all shrink-0"
+            className="bg-[var(--primary)] hover:bg-[var(--primary-hover)] shadow-sm text-white rounded-lg px-3 py-1.5 sm:px-4 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all shrink-0"
           >
             <FaCog size={12} />
             Manage
@@ -66,15 +66,20 @@ export default function TopSupportCards({
           return (
             <div
               key={item.id}
-              className="bg-[var(--card)] rounded-xl border border-[var(--card-border)] px-4 py-3 flex items-center gap-3 shadow-sm group hover:border-[var(--primary)]/40 transition-colors"
+              className="rounded-xl border bg-slate-100/80 dark:bg-slate-700/40 border-[var(--primary)]/30 px-4 py-4 flex items-center gap-3 group transition-colors shadow-md hover:border-[var(--primary)]/60"
             >
+              {/* Avatar */}
+              <div className="w-10 h-10 rounded-full bg-[var(--primary-bg)] text-[var(--primary)] border border-[var(--primary)]/20 flex items-center justify-center text-sm font-bold shrink-0">
+                {m?.name?.charAt(0).toUpperCase() || '?'}
+              </div>
+
               {/* Name */}
-              <div className="font-semibold text-sm truncate min-w-0 flex-1">
+              <div className="truncate min-w-0 flex-1 font-bold text-sm">
                 {m?.name || "Unknown"}
               </div>
 
               {/* Hours */}
-              <span className="text-xs text-[var(--muted)] whitespace-nowrap shrink-0 font-mono">
+              <span className="whitespace-nowrap shrink-0 font-mono text-xs text-[var(--primary)] font-semibold">
                 {hoursLabel}
               </span>
 
@@ -83,7 +88,7 @@ export default function TopSupportCards({
                 {phone && (
                   <>
                     <a
-                      href={`tel:${phone}`}
+                      href={`tel:${cleanPhone}`}
                       className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 transition-colors"
                       title={`Call ${m?.name}`}
                     >

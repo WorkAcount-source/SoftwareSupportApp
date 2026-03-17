@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, getDay, addDays, subDays } from "date-fns";
+import { format, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
 import { DailyAvailability } from "@/types";
+import { getCalendarRange } from "@/lib/calendar";
 
 interface CalendarGridProps {
   currentDate: Date;
@@ -18,17 +19,7 @@ export default function CalendarGrid({
   availabilities,
 }: CalendarGridProps) {
   const daysInMonth = useMemo(() => {
-    const start = startOfMonth(currentDate);
-    const end = endOfMonth(currentDate);
-    
-    // We want the calendar to always start on Sunday
-    const startDayOfWeek = getDay(start);
-    const startDate = subDays(start, startDayOfWeek);
-    
-    // We want it to end on Saturday
-    const endDayOfWeek = getDay(end);
-    const endDate = addDays(end, 6 - endDayOfWeek);
-
+    const { startDate, endDate } = getCalendarRange(currentDate);
     return eachDayOfInterval({ start: startDate, end: endDate });
   }, [currentDate]);
 

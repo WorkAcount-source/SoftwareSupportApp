@@ -32,7 +32,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head />
       <body>
         <AuthProvider>
           {children}

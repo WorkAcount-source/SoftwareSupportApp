@@ -28,7 +28,7 @@ export default function Header() {
               </span>
               <button
                 onClick={signOut}
-                className="text-xs font-semibold flex items-center gap-1.5 bg-slate-800 text-white hover:bg-slate-900 shadow-sm rounded-lg px-2.5 py-1.5 sm:px-3 transition-all"
+                className="text-xs font-semibold flex items-center gap-1.5 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm rounded-lg px-2.5 py-1.5 sm:px-3 transition-all"
               >
                 <FaSignOutAlt size={12} />
                 <span className="hidden sm:inline">Sign Out</span>

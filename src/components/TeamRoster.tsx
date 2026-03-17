@@ -15,7 +15,7 @@ export default function TeamRoster({ members, isEditor = false, onAddMember, onE
   if (members.length === 0) return null;
 
   return (
-    <div>
+    <div className="rounded-2xl border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/80 p-4 shadow-lg">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-bold text-[var(--foreground)]">
           Support Team
@@ -23,7 +23,7 @@ export default function TeamRoster({ members, isEditor = false, onAddMember, onE
         {isEditor && onAddMember && (
           <button
             onClick={onAddMember}
-            className="bg-slate-800 hover:bg-slate-900 text-white rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
+            className="bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
           >
             <FaPlus size={10} />
             Add
@@ -59,7 +59,7 @@ export default function TeamRoster({ members, isEditor = false, onAddMember, onE
                 {m.phone && (
                   <>
                     <a
-                      href={`tel:${m.phone}`}
+                      href={`tel:${cleanPhone}`}
                       className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 transition-colors"
                       title={`Call ${m.name}`}
                     >

@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { getSupabase } from "@/lib/supabase";
 import { TeamMember, DailyAvailability } from "@/types";
-import { format, addWeeks, getDay } from "date-fns";
+import { format, addWeeks } from "date-fns";
 
 interface AssignModalProps {
   date: string;
@@ -70,8 +70,9 @@ export default function AssignModal({
       }))
     );
 
-    await getSupabase().from("daily_availability").insert(rows);
+    const { error } = await getSupabase().from("daily_availability").insert(rows);
     setSaving(false);
+    if (error) { alert("Failed to assign. You may not have permission."); return; }
     onAssigned();
   };
 

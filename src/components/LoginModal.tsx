@@ -14,13 +14,11 @@ export default function LoginModal() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setInfo(null);
 
     if (!email.trim() || !password.trim()) {
       setError("Please fill in all fields.");
@@ -28,8 +26,12 @@ export default function LoginModal() {
     }
 
     if (mode === "signup") {
-      if (password.length < 6) {
-        setError("Password must be at least 6 characters.");
+      if (password.length < 8) {
+        setError("Password must be at least 8 characters.");
+        return;
+      }
+      if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password)) {
+        setError("Password must include uppercase, lowercase, and a number.");
         return;
       }
       if (password !== confirmPassword) {
@@ -48,9 +50,6 @@ export default function LoginModal() {
       if (error) {
         setError(error);
       }
-      // If signUp auto-signed-in (session returned), the modal will close via AuthContext.
-      // Otherwise show a confirmation message.
-      // We only show info if the modal is still open (no auto-login happened).
     }
 
     setLoading(false);
@@ -97,11 +96,6 @@ export default function LoginModal() {
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">
               {error}
-            </div>
-          )}
-          {info && (
-            <div className="bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-lg p-3">
-              {info}
             </div>
           )}
 
@@ -192,7 +186,6 @@ export default function LoginModal() {
             onClick={() => {
               setMode(mode === "signin" ? "signup" : "signin");
               setError(null);
-              setInfo(null);
             }}
             className="text-sm text-[var(--primary)] hover:text-[var(--primary-hover)] bg-transparent transition-colors"
           >

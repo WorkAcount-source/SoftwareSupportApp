@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { getCalendarRange } from "@/lib/calendar";
 import { TeamMember, DailyAvailability } from "@/types";
-import { format, addMonths, subMonths, isToday, startOfMonth, endOfMonth, subDays, addDays, getDay } from "date-fns";
+import { format, addMonths, subMonths, isToday } from "date-fns";
 import Header from "@/components/Header";
 import TopSupportCards from "@/components/TopSupportCards";
 import CalendarGrid from "@/components/CalendarGrid";
@@ -19,19 +20,15 @@ export default function Home() {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [availability, setAvailability] = useState<DailyAvailability[]>([]);
-  const [loading, setLoading] = useState(true);
   
   const [showAddMember, setShowAddMember] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [showAssign, setShowAssign] = useState(false);
 
-  const { requireEditor, showLoginModal, role } = useAuth();
+  const { requireAdmin, showLoginModal, role } = useAuth();
 
   const fetchTeamMembers = useCallback(async () => {
-    const supabase = getSupabase();
-    if (!supabase) return;
-
-    const { data } = await supabase
+    const { data } = await getSupabase()
       .from("team_members")
       .select("*")
       .eq("is_active", true)
@@ -40,24 +37,11 @@ export default function Home() {
   }, []);
 
   const fetchMonthAvailability = useCallback(async () => {
-    setLoading(true);
-    const supabase = getSupabase();
-    if (!supabase) return;
-    
-    // Calculate calendar grid range to fetch data
-    const start = startOfMonth(currentMonth);
-    const end = endOfMonth(currentMonth);
-    
-    // Include visible days from prev/next months
-    const startDayOfWeek = getDay(start);
-    const startDate = subDays(start, startDayOfWeek);
-    const endDayOfWeek = getDay(end);
-    const endDate = addDays(end, 6 - endDayOfWeek);
-
+    const { startDate, endDate } = getCalendarRange(currentMonth);
     const startStr = format(startDate, "yyyy-MM-dd");
     const endStr = format(endDate, "yyyy-MM-dd");
 
-    const { data } = await supabase
+    const { data } = await getSupabase()
       .from("daily_availability")
       .select("*, team_member:team_members(*)")
       .gte("date", startStr)
@@ -65,7 +49,6 @@ export default function Home() {
       .eq("is_available", true);
       
     if (data) setAvailability(data);
-    setLoading(false);
   }, [currentMonth]);
 
   useEffect(() => {
@@ -100,10 +83,9 @@ export default function Home() {
   };
 
   const handleRemoveAvailability = async (id: string) => {
-    if (!requireEditor()) return;
-    const supabase = getSupabase();
-    if (!supabase) return;
-    await supabase.from("daily_availability").delete().eq("id", id);
+    if (!requireAdmin()) return;
+    const { error } = await getSupabase().from("daily_availability").delete().eq("id", id);
+    if (error) { alert("Failed to remove assignment. You may not have permission."); return; }
     fetchMonthAvailability();
   };
 
@@ -114,10 +96,9 @@ export default function Home() {
   };
 
   const handleRemoveMember = async (id: string) => {
-    if (!requireEditor()) return;
-    const supabase = getSupabase();
-    if (!supabase) return;
-    await supabase.from("team_members").update({ is_active: false }).eq("id", id);
+    if (!requireAdmin()) return;
+    const { error } = await getSupabase().from("team_members").update({ is_active: false }).eq("id", id);
+    if (error) { alert("Failed to remove member. You may not have permission."); return; }
     fetchTeamMembers();
     fetchMonthAvailability();
   };
@@ -143,16 +124,16 @@ export default function Home() {
             availabilities={selectedDayAvailabilities}
             dateLabel={displayDateLabel}
             onRemove={handleRemoveAvailability}
-            onAssignClick={() => { if (requireEditor()) setShowAssign(true); }}
-            isEditor={role.isTeamMember}
+            onAssignClick={() => { if (requireAdmin()) setShowAssign(true); }}
+            isEditor={role.isAdmin}
           />
 
           <div className="hidden lg:block">
             <TeamRoster
               members={teamMembers}
-              isEditor={role.isTeamMember}
-              onAddMember={() => { if (requireEditor()) setShowAddMember(true); }}
-              onEditMember={(m) => { if (requireEditor()) setEditingMember(m); }}
+              isEditor={role.isAdmin}
+              onAddMember={() => { if (requireAdmin()) setShowAddMember(true); }}
+              onEditMember={(m) => { if (requireAdmin()) setEditingMember(m); }}
               onRemoveMember={handleRemoveMember}
             />
           </div>
@@ -174,13 +155,13 @@ export default function Home() {
               <div className="flex gap-1">
                 <button
                   onClick={handlePrevMonth}
-                  className="w-10 h-10 rounded-xl bg-slate-800 text-white hover:bg-slate-900 shadow-sm flex items-center justify-center transition-all"
+                  className="w-10 h-10 rounded-xl bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm flex items-center justify-center transition-all"
                 >
                   <FaChevronLeft size={14} />
                 </button>
                 <button
                   onClick={handleNextMonth}
-                  className="w-10 h-10 rounded-xl bg-slate-800 text-white hover:bg-slate-900 shadow-sm flex items-center justify-center transition-all"
+                  className="w-10 h-10 rounded-xl bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm flex items-center justify-center transition-all"
                 >
                   <FaChevronRight size={14} />
                 </button>
@@ -199,9 +180,9 @@ export default function Home() {
           <div className="mt-8 block lg:hidden">
             <TeamRoster
               members={teamMembers}
-              isEditor={role.isTeamMember}
-              onAddMember={() => { if (requireEditor()) setShowAddMember(true); }}
-              onEditMember={(m) => { if (requireEditor()) setEditingMember(m); }}
+              isEditor={role.isAdmin}
+              onAddMember={() => { if (requireAdmin()) setShowAddMember(true); }}
+              onEditMember={(m) => { if (requireAdmin()) setEditingMember(m); }}
               onRemoveMember={handleRemoveMember}
             />
           </div>
