@@ -18,7 +18,7 @@ export default function TeamRoster({ members, isEditor = false, onAddMember, onE
     <div className="rounded-2xl border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/80 p-4 shadow-lg">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-bold text-[var(--foreground)]">
-          Support Team
+          Team
         </h2>
         {isEditor && onAddMember && (
           <button
