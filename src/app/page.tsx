@@ -208,6 +208,14 @@ export default function Home() {
       )}
 
       {showLoginModal && <LoginModal />}
+
+      {/* Footer */}
+      <footer className="border-t border-[var(--card-border)] bg-[var(--card)] py-4 mt-auto">
+        <div className="flex items-center justify-center gap-2">
+          <img src="/logo-full.png" alt="Rigaku" className="h-[16px] object-contain opacity-70" />
+          <span className="text-xs text-[var(--muted)]">Powered by Rigaku Software Team</span>
+        </div>
+      </footer>
     </div>
   );
 }
